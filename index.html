@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>出欠連絡</title>
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --attend: #16a34a;
+      --absent: #dc2626;
+      --late:   #d97706;
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #f1f5f9;
+      color: #1e293b;
+    }
+    header {
+      background: var(--primary);
+      color: #fff;
+      padding: 20px 24px;
+      text-align: center;
+    }
+    header h1 { margin: 0; font-size: 1.5rem; letter-spacing: .05em; }
+    header p  { margin: 4px 0 0; font-size: .85rem; opacity: .8; }
+
+    main {
+      max-width: 560px;
+      margin: 32px auto;
+      padding: 0 16px 48px;
+    }
+
+    /* ── フォームカード ── */
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 16px rgba(0,0,0,.08);
+      padding: 28px 24px;
+      margin-bottom: 28px;
+    }
+    .card h2 {
+      margin: 0 0 20px;
+      font-size: 1.1rem;
+      color: #334155;
+      border-left: 4px solid var(--primary);
+      padding-left: 10px;
+    }
+
+    label.field-label {
+      display: block;
+      font-size: .85rem;
+      font-weight: 600;
+      color: #475569;
+      margin-bottom: 6px;
+    }
+    .field { margin-bottom: 18px; }
+
+    input[type="text"],
+    input[type="date"],
+    textarea {
+      width: 100%;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 1rem;
+      font-family: inherit;
+      transition: border-color .2s;
+      background: #f8fafc;
+    }
+    input[type="text"]:focus,
+    input[type="date"]:focus,
+    textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      background: #fff;
+    }
+    textarea { resize: vertical; min-height: 72px; }
+
+    /* ── ステータス選択ボタン ── */
+    .status-group {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    .status-group input[type="radio"] { display: none; }
+    .status-label {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 14px 8px;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all .2s;
+      background: #f8fafc;
+      font-size: .9rem;
+      font-weight: 600;
+      color: #64748b;
+      user-select: none;
+    }
+    .status-label .icon { font-size: 1.8rem; }
+    .status-group input#attend:checked ~ label[for="attend"],
+    .status-group input[value="出席"]:checked + label {
+      border-color: var(--attend);
+      background: #f0fdf4;
+      color: var(--attend);
+    }
+    /* 個別に指定 */
+    #attend:checked + label[for="attend"] { border-color: var(--attend); background: #f0fdf4; color: var(--attend); }
+    #absent:checked + label[for="absent"] { border-color: var(--absent); background: #fef2f2; color: var(--absent); }
+    #late:checked   + label[for="late"]   { border-color: var(--late);   background: #fffbeb; color: var(--late);   }
+
+    /* ── 送信ボタン ── */
+    .submit-btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      background: var(--primary);
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity .2s, transform .1s;
+    }
+    .submit-btn:hover  { opacity: .9; }
+    .submit-btn:active { transform: scale(.98); }
+
+    /* ── トースト通知 ── */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #1e293b;
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 30px;
+      font-size: .9rem;
+      font-weight: 600;
+      opacity: 0;
+      transition: all .35s;
+      pointer-events: none;
+      z-index: 999;
+    }
+    #toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ── 回答一覧 ── */
+    .list-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .list-header h2 {
+      margin: 0;
+      font-size: 1rem;
+      color: #334155;
+    }
+    .clear-btn {
+      border: none;
+      background: none;
+      color: #94a3b8;
+      font-size: .8rem;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: background .2s, color .2s;
+    }
+    .clear-btn:hover { background: #fee2e2; color: var(--absent); }
+
+    #responseList { display: grid; gap: 10px; }
+
+    .response-item {
+      background: #fff;
+      border-radius: 12px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.05);
+      border-left: 4px solid #e2e8f0;
+    }
+    .response-item.attend { border-left-color: var(--attend); }
+    .response-item.absent { border-left-color: var(--absent); }
+    .response-item.late   { border-left-color: var(--late);   }
+
+    .res-icon { font-size: 1.5rem; flex-shrink: 0; }
+    .res-body { flex: 1; min-width: 0; }
+    .res-name {
+      font-weight: 700;
+      font-size: .95rem;
+      color: #1e293b;
+    }
+    .res-meta {
+      font-size: .78rem;
+      color: #94a3b8;
+      margin-top: 2px;
+    }
+    .res-note {
+      font-size: .85rem;
+      color: #475569;
+      margin-top: 6px;
+      word-break: break-word;
+    }
+    .badge {
+      font-size: .72rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 20px;
+      flex-shrink: 0;
+      align-self: flex-start;
+    }
+    .badge.attend { background: #dcfce7; color: var(--attend); }
+    .badge.absent { background: #fee2e2; color: var(--absent); }
+    .badge.late   { background: #fef3c7; color: var(--late);   }
+
+    .empty-state {
+      text-align: center;
+      color: #94a3b8;
+      font-size: .9rem;
+      padding: 24px 0;
+    }
+
+    /* ── 集計 ── */
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .summary-item {
+      background: #fff;
+      border-radius: 12px;
+      padding: 14px 8px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,.05);
+    }
+    .summary-item .s-count { font-size: 1.8rem; font-weight: 800; }
+    .summary-item .s-label { font-size: .75rem; color: #64748b; margin-top: 2px; }
+    .summary-item.attend .s-count { color: var(--attend); }
+    .summary-item.absent .s-count { color: var(--absent); }
+    .summary-item.late   .s-count { color: var(--late);   }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>出欠連絡</h1>
+  <p>出席・欠席・遅刻をお知らせください</p>
+</header>
+
+<main>
+  <!-- 入力フォーム -->
+  <div class="card">
+    <h2>出欠を連絡する</h2>
+
+    <div class="field">
+      <label class="field-label" for="nameInput">お名前 <span style="color:#ef4444">*</span></label>
+      <input type="text" id="nameInput" placeholder="山田 花子" maxlength="50" />
+    </div>
+
+    <div class="field">
+      <label class="field-label">出欠区分 <span style="color:#ef4444">*</span></label>
+      <div class="status-group">
+        <input type="radio" name="status" id="attend" value="出席" />
+        <label class="status-label" for="attend">
+          <span class="icon">✅</span>出席
+        </label>
+
+        <input type="radio" name="status" id="absent" value="欠席" />
+        <label class="status-label" for="absent">
+          <span class="icon">❌</span>欠席
+        </label>
+
+        <input type="radio" name="status" id="late" value="遅刻" />
+        <label class="status-label" for="late">
+          <span class="icon">⏰</span>遅刻
+        </label>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="field-label" for="noteInput">連絡事項（任意）</label>
+      <textarea id="noteInput" placeholder="理由・到着予定時刻など"></textarea>
+    </div>
+
+    <button class="submit-btn" id="submitBtn">送信する</button>
+  </div>
+
+  <!-- 集計 -->
+  <div class="summary">
+    <div class="summary-item attend">
+      <div class="s-count" id="countAttend">0</div>
+      <div class="s-label">✅ 出席</div>
+    </div>
+    <div class="summary-item absent">
+      <div class="s-count" id="countAbsent">0</div>
+      <div class="s-label">❌ 欠席</div>
+    </div>
+    <div class="summary-item late">
+      <div class="s-count" id="countLate">0</div>
+      <div class="s-label">⏰ 遅刻</div>
+    </div>
+  </div>
+
+  <!-- 一覧 -->
+  <div class="list-header">
+    <h2>回答一覧</h2>
+    <button class="clear-btn" id="clearBtn">すべて削除</button>
+  </div>
+  <div id="responseList">
+    <p class="empty-state">まだ回答はありません</p>
+  </div>
+</main>
+
+<div id="toast"></div>
+
+<script>
+  const STORAGE_KEY = 'attendance_responses';
+
+  const nameInput   = document.getElementById('nameInput');
+  const noteInput   = document.getElementById('noteInput');
+  const submitBtn   = document.getElementById('submitBtn');
+  const clearBtn    = document.getElementById('clearBtn');
+  const listEl      = document.getElementById('responseList');
+  const toast       = document.getElementById('toast');
+  const countAttend = document.getElementById('countAttend');
+  const countAbsent = document.getElementById('countAbsent');
+  const countLate   = document.getElementById('countLate');
+
+  function load() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+    catch { return []; }
+  }
+  function save(data) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }
+
+  function statusClass(status) {
+    return { '出席': 'attend', '欠席': 'absent', '遅刻': 'late' }[status] || '';
+  }
+  function statusIcon(status) {
+    return { '出席': '✅', '欠席': '❌', '遅刻': '⏰' }[status] || '';
+  }
+
+  function formatDate(iso) {
+    const d = new Date(iso);
+    return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} `
+         + `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  }
+
+  function render() {
+    const data = load();
+    const cls = statusClass;
+
+    // 集計
+    countAttend.textContent = data.filter(r => r.status === '出席').length;
+    countAbsent.textContent = data.filter(r => r.status === '欠席').length;
+    countLate.textContent   = data.filter(r => r.status === '遅刻').length;
+
+    // 一覧
+    if (data.length === 0) {
+      listEl.innerHTML = '<p class="empty-state">まだ回答はありません</p>';
+      return;
+    }
+
+    listEl.innerHTML = [...data].reverse().map(r => `
+      <div class="response-item ${cls(r.status)}">
+        <span class="res-icon">${statusIcon(r.status)}</span>
+        <div class="res-body">
+          <div class="res-name">${escHtml(r.name)}</div>
+          <div class="res-meta">${formatDate(r.timestamp)}</div>
+          ${r.note ? `<div class="res-note">${escHtml(r.note)}</div>` : ''}
+        </div>
+        <span class="badge ${cls(r.status)}">${escHtml(r.status)}</span>
+      </div>
+    `).join('');
+  }
+
+  function escHtml(str) {
+    return str.replace(/[&<>"']/g, c =>
+      ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])
+    );
+  }
+
+  function showToast(msg) {
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2500);
+  }
+
+  submitBtn.addEventListener('click', () => {
+    const name = nameInput.value.trim();
+    const statusEl = document.querySelector('input[name="status"]:checked');
+
+    if (!name) {
+      showToast('⚠️ お名前を入力してください');
+      nameInput.focus();
+      return;
+    }
+    if (!statusEl) {
+      showToast('⚠️ 出欠区分を選択してください');
+      return;
+    }
+
+    const data = load();
+    data.push({
+      name,
+      status: statusEl.value,
+      note: noteInput.value.trim(),
+      timestamp: new Date().toISOString()
+    });
+    save(data);
+
+    nameInput.value = '';
+    noteInput.value = '';
+    document.querySelectorAll('input[name="status"]').forEach(r => r.checked = false);
+
+    showToast(`✅ ${name} さんの「${statusEl.value}」を受け付けました`);
+    render();
+  });
+
+  clearBtn.addEventListener('click', () => {
+    if (!confirm('回答をすべて削除しますか？')) return;
+    save([]);
+    render();
+    showToast('🗑️ 削除しました');
+  });
+
+  render();
+</script>
+</body>
+</html>
