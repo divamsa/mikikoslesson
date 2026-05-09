@@ -19,6 +19,10 @@
       background: #f1f5f9;
       color: #1e293b;
     }
+
+    ruby { ruby-align: center; }
+    rt   { font-size: .6em; }
+
     header {
       background: var(--primary);
       color: #fff;
@@ -61,6 +65,7 @@
 
     input[type="text"],
     input[type="date"],
+    input[type="time"],
     textarea {
       width: 100%;
       border: 1.5px solid #cbd5e1;
@@ -73,6 +78,7 @@
     }
     input[type="text"]:focus,
     input[type="date"]:focus,
+    input[type="time"]:focus,
     textarea:focus {
       outline: none;
       border-color: var(--primary);
@@ -104,13 +110,6 @@
       user-select: none;
     }
     .status-label .icon { font-size: 1.8rem; }
-    .status-group input#attend:checked ~ label[for="attend"],
-    .status-group input[value="出席"]:checked + label {
-      border-color: var(--attend);
-      background: #f0fdf4;
-      color: var(--attend);
-    }
-    /* 個別に指定 */
     #attend:checked + label[for="attend"] { border-color: var(--attend); background: #f0fdf4; color: var(--attend); }
     #absent:checked + label[for="absent"] { border-color: var(--absent); background: #fef2f2; color: var(--absent); }
     #late:checked   + label[for="late"]   { border-color: var(--late);   background: #fffbeb; color: var(--late);   }
@@ -151,6 +150,14 @@
     #toast.show {
       opacity: 1;
       transform: translateX(-50%) translateY(0);
+    }
+
+    .weekday-label {
+      margin-top: 6px;
+      font-size: .85rem;
+      font-weight: 700;
+      color: var(--primary);
+      min-height: 1.2em;
     }
 
     /* ── 回答一覧 ── */
@@ -254,71 +261,82 @@
 <body>
 
 <header>
-  <h1>出欠連絡</h1>
-  <p>出席・欠席・遅刻をお知らせください</p>
+  <h1><ruby>出欠<rt>しゅっけつ</rt></ruby><ruby>連絡<rt>れんらく</rt></ruby></h1>
+  <p><ruby>出席<rt>しゅっせき</rt></ruby>・<ruby>欠席<rt>けっせき</rt></ruby>・<ruby>遅刻<rt>ちこく</rt></ruby>をお<ruby>知<rt>し</rt></ruby>らせください</p>
 </header>
 
 <main>
   <!-- 入力フォーム -->
   <div class="card">
-    <h2>出欠を連絡する</h2>
+    <h2><ruby>出欠<rt>しゅっけつ</rt></ruby>を<ruby>連絡<rt>れんらく</rt></ruby>する</h2>
 
     <div class="field">
-      <label class="field-label" for="nameInput">お名前 <span style="color:#ef4444">*</span></label>
+      <label class="field-label" for="nameInput">お<ruby>名前<rt>なまえ</rt></ruby> <span style="color:#ef4444">*</span></label>
       <input type="text" id="nameInput" placeholder="山田 花子" maxlength="50" />
     </div>
 
     <div class="field">
-      <label class="field-label">出欠区分 <span style="color:#ef4444">*</span></label>
+      <label class="field-label" for="lessonDate">レッスン<ruby>日<rt>び</rt></ruby> <span style="color:#ef4444">*</span></label>
+      <input type="date" id="lessonDate" />
+      <div id="weekdayLabel" class="weekday-label"></div>
+    </div>
+
+    <div class="field">
+      <label class="field-label" for="lessonTime">レッスン<ruby>開始<rt>かいし</rt></ruby><ruby>時間<rt>じかん</rt></ruby> <span style="color:#ef4444">*</span></label>
+      <input type="time" id="lessonTime" />
+    </div>
+
+    <div class="field">
+      <label class="field-label"><ruby>出欠<rt>しゅっけつ</rt></ruby><ruby>区分<rt>くぶん</rt></ruby> <span style="color:#ef4444">*</span></label>
       <div class="status-group">
         <input type="radio" name="status" id="attend" value="出席" />
         <label class="status-label" for="attend">
-          <span class="icon">✅</span>出席
+          <span class="icon">✅</span><ruby>出席<rt>しゅっせき</rt></ruby>
         </label>
 
         <input type="radio" name="status" id="absent" value="欠席" />
         <label class="status-label" for="absent">
-          <span class="icon">❌</span>欠席
+          <span class="icon">❌</span><ruby>欠席<rt>けっせき</rt></ruby>
         </label>
 
         <input type="radio" name="status" id="late" value="遅刻" />
         <label class="status-label" for="late">
-          <span class="icon">⏰</span>遅刻
+          <span class="icon">⏰</span><ruby>遅刻<rt>ちこく</rt></ruby>
         </label>
       </div>
     </div>
 
     <div class="field">
-      <label class="field-label" for="noteInput">連絡事項（任意）</label>
+      <label class="field-label" for="noteInput"><ruby>連絡<rt>れんらく</rt></ruby><ruby>事項<rt>じこう</rt></ruby>（<ruby>任意<rt>にんい</rt></ruby>）</label>
       <textarea id="noteInput" placeholder="理由・到着予定時刻など"></textarea>
     </div>
 
-    <button class="submit-btn" id="submitBtn">送信する</button>
+    <button class="submit-btn" id="submitBtn"><ruby>送信<rt>そうしん</rt></ruby>する</button>
   </div>
 
   <!-- 集計 -->
   <div class="summary">
     <div class="summary-item attend">
       <div class="s-count" id="countAttend">0</div>
-      <div class="s-label">✅ 出席</div>
+      <div class="s-label">✅ <ruby>出席<rt>しゅっせき</rt></ruby></div>
     </div>
     <div class="summary-item absent">
       <div class="s-count" id="countAbsent">0</div>
-      <div class="s-label">❌ 欠席</div>
+      <div class="s-label">❌ <ruby>欠席<rt>けっせき</rt></ruby></div>
     </div>
     <div class="summary-item late">
       <div class="s-count" id="countLate">0</div>
-      <div class="s-label">⏰ 遅刻</div>
+      <div class="s-label">⏰ <ruby>遅刻<rt>ちこく</rt></ruby></div>
     </div>
   </div>
 
   <!-- 一覧 -->
   <div class="list-header">
-    <h2>回答一覧</h2>
-    <button class="clear-btn" id="clearBtn">すべて削除</button>
+    <h2><ruby>回答<rt>かいとう</rt></ruby><ruby>一覧<rt>いちらん</rt></ruby></h2>
+    <button class="clear-btn" id="clearBtn">すべて<ruby>削除<rt>さくじょ</rt></ruby></button>
   </div>
   <div id="responseList">
-    <p class="empty-state">まだ回答はありません</p>
+    <p class="empty-state">まだ<ruby>回答<rt>かいとう</rt></ruby>はありません</p>
   </div>
 </main>
 
@@ -327,15 +345,27 @@
 <script>
   const STORAGE_KEY = 'attendance_responses';
 
-  const nameInput   = document.getElementById('nameInput');
-  const noteInput   = document.getElementById('noteInput');
-  const submitBtn   = document.getElementById('submitBtn');
-  const clearBtn    = document.getElementById('clearBtn');
-  const listEl      = document.getElementById('responseList');
-  const toast       = document.getElementById('toast');
-  const countAttend = document.getElementById('countAttend');
-  const countAbsent = document.getElementById('countAbsent');
-  const countLate   = document.getElementById('countLate');
+  const nameInput    = document.getElementById('nameInput');
+  const lessonDate   = document.getElementById('lessonDate');
+  const weekdayLabel = document.getElementById('weekdayLabel');
+  const lessonTime   = document.getElementById('lessonTime');
+  const noteInput    = document.getElementById('noteInput');
+  const submitBtn    = document.getElementById('submitBtn');
+  const clearBtn     = document.getElementById('clearBtn');
+  const listEl       = document.getElementById('responseList');
+  const toast        = document.getElementById('toast');
+  const countAttend  = document.getElementById('countAttend');
+  const countAbsent  = document.getElementById('countAbsent');
+  const countLate    = document.getElementById('countLate');
+
+  const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土'];
+
+  lessonDate.addEventListener('change', () => {
+    if (!lessonDate.value) { weekdayLabel.textContent = ''; return; }
+    const [y, m, d] = lessonDate.value.split('-').map(Number);
+    const day = new Date(y, m - 1, d).getDay();
+    weekdayLabel.textContent = `（${WEEKDAYS[day]}曜日）`;
+  });
 
   function load() {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
@@ -362,14 +392,12 @@
     const data = load();
     const cls = statusClass;
 
-    // 集計
     countAttend.textContent = data.filter(r => r.status === '出席').length;
     countAbsent.textContent = data.filter(r => r.status === '欠席').length;
     countLate.textContent   = data.filter(r => r.status === '遅刻').length;
 
-    // 一覧
     if (data.length === 0) {
-      listEl.innerHTML = '<p class="empty-state">まだ回答はありません</p>';
+      listEl.innerHTML = '<p class="empty-state">まだ<ruby>回答<rt>かいとう</rt></ruby>はありません</p>';
       return;
     }
 
@@ -378,7 +406,7 @@
         <span class="res-icon">${statusIcon(r.status)}</span>
         <div class="res-body">
           <div class="res-name">${escHtml(r.name)}</div>
-          <div class="res-meta">${formatDate(r.timestamp)}</div>
+          <div class="res-meta">${r.lessonDate ? `📅 ${escHtml(r.lessonDate)}` : ''}${r.lessonTime ? `　🕐 ${escHtml(r.lessonTime)}` : ''}　送信: ${formatDate(r.timestamp)}</div>
           ${r.note ? `<div class="res-note">${escHtml(r.note)}</div>` : ''}
         </div>
         <span class="badge ${cls(r.status)}">${escHtml(r.status)}</span>
@@ -407,14 +435,30 @@
       nameInput.focus();
       return;
     }
+    if (!lessonDate.value) {
+      showToast('⚠️ レッスン日を入力してください');
+      lessonDate.focus();
+      return;
+    }
+    if (!lessonTime.value) {
+      showToast('⚠️ レッスン開始時間を入力してください');
+      lessonTime.focus();
+      return;
+    }
     if (!statusEl) {
       showToast('⚠️ 出欠区分を選択してください');
       return;
     }
 
+    const [y, m, d] = lessonDate.value.split('-').map(Number);
+    const dayIndex = new Date(y, m - 1, d).getDay();
+    const lessonDateLabel = `${lessonDate.value}（${WEEKDAYS[dayIndex]}）`;
+
     const data = load();
     data.push({
       name,
+      lessonDate: lessonDateLabel,
+      lessonTime: lessonTime.value,
       status: statusEl.value,
       note: noteInput.value.trim(),
       timestamp: new Date().toISOString()
@@ -422,6 +466,9 @@
     save(data);
 
     nameInput.value = '';
+    lessonDate.value = '';
+    weekdayLabel.textContent = '';
+    lessonTime.value = '';
     noteInput.value = '';
     document.querySelectorAll('input[name="status"]').forEach(r => r.checked = false);
 
