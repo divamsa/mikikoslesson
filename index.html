@@ -450,17 +450,21 @@
       return;
     }
 
+    // フォーム値をクリア前にすべて変数に保存
     const [y, m, d] = lessonDate.value.split('-').map(Number);
     const dayIndex = new Date(y, m - 1, d).getDay();
     const lessonDateLabel = `${lessonDate.value}（${WEEKDAYS[dayIndex]}）`;
+    const lessonTimeValue = lessonTime.value;
+    const statusValue = statusEl.value;
+    const noteValue = noteInput.value.trim();
 
     const data = load();
     data.push({
       name,
       lessonDate: lessonDateLabel,
-      lessonTime: lessonTime.value,
-      status: statusEl.value,
-      note: noteInput.value.trim(),
+      lessonTime: lessonTimeValue,
+      status: statusValue,
+      note: noteValue,
       timestamp: new Date().toISOString()
     });
     save(data);
@@ -472,8 +476,23 @@
     noteInput.value = '';
     document.querySelectorAll('input[name="status"]').forEach(r => r.checked = false);
 
-    showToast(`✅ ${name} さんの「${statusEl.value}」を受け付けました`);
+    showToast(`✅ ${name} さんの「${statusValue}」を受け付けました`);
     render();
+
+    // mailto：変数から組み立て（クリア後の値を参照しない）
+    const subject = encodeURIComponent(`【出欠連絡】${name}`);
+    const body = encodeURIComponent(
+      `お名前：${name}\n` +
+      `レッスン日：${lessonDateLabel}\n` +
+      `開始時間：${lessonTimeValue}\n` +
+      `出欠区分：${statusValue}\n` +
+      (noteValue ? `連絡事項：${noteValue}\n` : '')
+    );
+    const a = document.createElement('a');
+    a.href = `mailto:norimikippp@gmail.com?subject=${subject}&body=${body}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   });
 
   clearBtn.addEventListener('click', () => {
