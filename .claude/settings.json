@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "openai-codex": {
+      "command": "python3",
+      "args": ["mcp_openai_server.py"],
+      "env": {
+        "OPENAI_API_KEY": "${OPENAI_API_KEY}"
+      }
+    }
+  }
+}
